@@ -218,7 +218,8 @@ const htmlStrGenStatements = {
         for (const attrName in attrs) {
             // Ignore event listeners
             const isEventListener = attrName.slice(0, 2) === "on";
-            if (isEventListener) {
+            const isStaticAttr = attrName.slice(0, 6) === "static";
+            if (isEventListener || isStaticAttr) {
                 continue;
             }
 
@@ -296,28 +297,106 @@ const htmlDomGenStatements = {
     ...htmlStatementsBase,
 
     _rootNode: null,
-    _currentEl: null,
+    _parentNode: null,
+    _currentNode: null,
+    _staticNodes: new Map(),
+    _staticIdx: 0,
 
     _beforeExec() {
         this._rootNode = null;
+        this._parentNode = null;
         this._currentNode = null;
+        this._staticIdx = 0;
     },
 
     beginEl(tagName, attrs) {
-        attrs ||= {};
+        attrs = {...(attrs || {})};
 
-        const newEl = document.createElement(tagName);
+        this.onCompoundEnd(() => {
+            if (this._parentNode !== null) {
+                this._currentNode = this._parentNode.nextSibling;
+                this._parentNode = this._parentNode.parentNode;
+            }
+        });
 
-        if (this._currentEl !== null) {
-            this._currentEl.appendChild(newEl);
+        let el;
+        if (attrs.static === true) {  // Handle elements marked as static
+            let staticKey;
+            if (typeof attrs.staticKey !== "undefined") {
+                staticKey = attrs.staticKey;
+                delete attrs.staticKey;
+            } else {
+                staticKey = `__staticIdx__:${this._staticIdx}`;
+                this._staticIdx++;
+            }
+
+            if (this._staticNodes.has(staticKey)) {
+                el = this._staticNodes.get(staticKey);
+                if (this._currentNode !== el) {
+                    this._replaceCurrentNodeWith(el);
+                }
+                this._parentNode = el;
+                this._currentNode = el.firstChild;
+                return;
+            } else {
+                el = document.createElement(tagName);
+                this._staticNodes.set(staticKey, el);
+            }
+
+            delete attrs.static;
+        } else {
+            el = document.createElement(tagName);
         }
 
-        this._currentEl = newEl;
+        this._setElAttrsAndEventHandlers(el, attrs);
+
+        this._replaceCurrentNodeWith(el);
+
+        this._parentNode = el;
+        this._currentNode = null;
+    },
+
+    trustedText(str) {
+        const textNode = document.createTextNode(str);
+
+        this._replaceCurrentNodeWith(textNode);
+
+        if (this._currentNode !== null) {
+            this._currentNode = this._currentNode.nextSibling;
+        }
+    },
+
+    untrustedText(str) {
+        this.trustedText(str);
+    },
+
+    unsafeInnerHtml(str) {
+        if (this._staticAlreadyGenerated) {
+            return;
+        }
+
+        this._currentNode.innerHTML += str;
+    },
+
+    getDomNode() {
+        return this._rootNode;
+    },
+
+    _replaceCurrentNodeWith(newNode) {
+        if (this._currentNode === null) {
+            if (this._parentNode !== null) {
+                this._parentNode.appendChild(newNode);
+            }
+        } else {
+            this._currentNode.replaceWith(newNode);
+        }
 
         if (this._rootNode === null) {
-            this._rootNode = this._currentEl;
+            this._rootNode = newNode;
         }
-
+    },
+    
+    _setElAttrsAndEventHandlers(el, attrs) {
         for (const attrName in attrs) {
             const attrValue = attrs[attrName];
 
@@ -326,44 +405,15 @@ const htmlDomGenStatements = {
             if (isEventListener) {
                 const eventName = attrName.slice(2).toLowerCase();
                 const eventListener = attrValue;
-                this._currentEl.addEventListener(
-                    eventName,
-                    eventListener,
-                );
+                el.addEventListener(eventName, eventListener);
             } else if (isBooleanAttr) {
                 if (attrValue === true) {
-                    this._currentEl.setAttribute(attrName, "");
+                    el.setAttribute(attrName, "");
                 }
             } else {
-                this._currentEl.setAttribute(attrName, attrValue.toString());
+                el.setAttribute(attrName, attrValue.toString());
             }
         }
-
-        this.onCompoundEnd(() => {
-            this._currentEl = this._currentEl.parentNode;
-        });
-    },
-
-    trustedText(str) {
-        const textNode = document.createTextNode(str);
-
-        if (this._rootNode === null) {
-            this._rootNode = textNode;
-        }
-
-        this._currentEl.appendChild(textNode);
-    },
-
-    untrustedText(str) {
-        this.trustedText(str);
-    },
-
-    unsafeInnerHtml(str) {
-        this._currentEl.innerHTML += str;
-    },
-
-    getDomNode() {
-        return this._rootNode;
     },
 };
 
