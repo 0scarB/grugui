@@ -44,7 +44,7 @@ function createAppEl(update) {
 
     const renderStartScreen = () => {
         // Start Player Selection
-        html.fieldset(() => {
+        html.beginFieldset();
             html.legend(() => html.trustedText("Start Player: "));
             html.input({
                 type: "radio", 
@@ -66,10 +66,10 @@ function createAppEl(update) {
                 },
             });
             html.label({for: "O"}, () => html.trustedText("O"));
-        });
+        end();
 
         // AI Player Selection
-        html.fieldset(() => {
+        html.beginFieldset();
             html.legend(() => html.trustedText("AI Player: "));
             html.input({
                 type: "radio", 
@@ -101,7 +101,7 @@ function createAppEl(update) {
                 },
             });
             html.label({for: "O"}, () => html.trustedText("O"));
-        });
+        end();
 
         // Start Game Button
         html.button({
@@ -113,13 +113,13 @@ function createAppEl(update) {
     };
 
     const renderBoard = () => {
-        html.div(() => {
+        html.beginDiv();
             for (let rowIdx = 0; rowIdx < 3; rowIdx++) {
                 const row = state.currentBoard[rowIdx];
-                html.div(() => {
+                html.beginDiv();
                     for (let colIdx = 0; colIdx < 3; colIdx++) {
                         const cell = row[colIdx];
-                        html.button({
+                        html.beginButton({
                             onClick: () => {
                                 if (state.status !== "inPlay" 
                                     || state.currentBoard[rowIdx][colIdx] !== " ") {
@@ -128,19 +128,19 @@ function createAppEl(update) {
                                 makeMove(rowIdx, colIdx);
                                 update();
                             },
-                        }, () => {
-                            html.code(() => {
+                        });
+                            html.beginCode();
                                 if (cell === " ") {
                                     html.unsafeInnerHtml("&nbsp;");
                                 } else {
                                     html.trustedText(cell);
                                 }
-                            });
-                        });
+                            end();
+                        end();
                     }
-                });
+                end();
             }
-        });
+        end();
     };
 
     const renderStatus = () => {

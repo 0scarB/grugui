@@ -191,10 +191,14 @@ for (const htmlTagName of [
     "wbr",
     "xmp",
 ]) {
-    const htmlStatementsMethod = function (...args) {
+    htmlStatementsBase[
+        `begin${htmlTagName[0].toUpperCase()}${htmlTagName.slice(1)}`
+    ] = function (...args) {
+        this.beginEl(htmlTagName, ...args);
+    };
+    htmlStatementsBase[htmlTagName] = function (...args) {
         this.el(htmlTagName, ...args);
     };
-    htmlStatementsBase[htmlTagName] = htmlStatementsMethod;
 }
 
 const htmlStrGenStatements = {
@@ -371,11 +375,7 @@ const htmlDomGenStatements = {
     },
 
     unsafeInnerHtml(str) {
-        if (this._staticAlreadyGenerated) {
-            return;
-        }
-
-        this._currentNode.innerHTML += str;
+        this._parentNode.innerHTML += str;
     },
 
     getDomNode() {
