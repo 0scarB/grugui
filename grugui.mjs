@@ -364,10 +364,6 @@ const htmlDomGenStatements = {
         const textNode = document.createTextNode(str);
 
         this._replaceCurrentNodeWith(textNode);
-
-        if (this._currentNode !== null) {
-            this._currentNode = this._currentNode.nextSibling;
-        }
     },
 
     untrustedText(str) {
