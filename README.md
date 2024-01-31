@@ -11,41 +11,52 @@ Grug-UI is a set of light-weight JavaScript utilities for programmatically:
 
 ### [Counter](./examples/counter/index.mjs)
 ```js
-import {beginExec} from "./grugui.mjs";
+import grugui from "./grugui.mjs";
 
 let count = 0;
 
-function createAppEl(update) {
-    const {html, end} = beginExec("domGen");
-        html.main({id: "app"}, () => {
-            html.div(() => {
-                html.span(() => html.trustedText(`Count: ${count}`));
-            });
+function render(update) {
+    const {main, div, span, trustedText, button, end} = grugui;
 
-            html.button({
-                onClick: () => {
-                    count--;
-                    update();
-                },
-            }, () => html.trustedText("Decrement"))
-            html.button({
-                onClick: () => {
-                    count++;
-                    update();
-                },
-            }, () => html.trustedText("Increment"))
-        });
+    main({id: "app"});
+        div(); 
+            span();
+                trustedText(`Count: ${count}`);
+            end();
+        end();
+        
+        button({onClick: () => {
+            count--;
+            update();
+        }});
+            trustedText("Decrement");
+        end();
+        button({onClick: () => {
+            count++;
+            update();
+        }});
+            trustedText("Increment");
+        end();
     end();
-
-    return html.getDomNode();
 }
 
-function update() {
-    const newAppEl = createAppEl(update);
-    document.getElementById("app").replaceWith(newAppEl);
+function staticGen() {
+    grugui.setCtx("strGen");
+    render();
+    return grugui.getHtmlStr();
 }
 
-update();
+function drawUi() {
+    grugui.setCtx("domGen");
+    render(drawUi);
+    document.getElementById("app")
+        .replaceWith(grugui.getDomLastNode());
+    grugui.reset();
+}
+
+console.log(staticGen());
+// Output: <main id="app"><div><span>Count: 0</span></div><button>Decrement</button><button>Increment</button></main>
+drawUi();
 ```
 
 ### [Tic-Tac-Toe](./examples/tic-tac-toe/index.mjs)
