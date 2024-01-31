@@ -110,6 +110,11 @@ for (const htmlTagName of [
     "frame",
     "frameset",
     "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
     "head",
     "header",
     "hgroup",
@@ -374,8 +379,20 @@ const htmlDomGenStatements = {
         this._parentNode.innerHTML += str;
     },
 
+    nativeEl(el) {
+        this._replaceCurrentNodeWith(el);
+
+        if (this._currentNode !== null) {
+            this._currentNode = this._currentNode.nextSibling;
+        }
+    },
+
     getDomNode() {
         return this._rootNode;
+    },
+
+    getCurrentParentNode() {
+        return this._parentNode;
     },
 
     _replaceCurrentNodeWith(newNode) {
@@ -400,8 +417,18 @@ const htmlDomGenStatements = {
             const isBooleanAttr = this._BOOLEAN_ATTR_NAMES.has(attrName);
             if (isEventListener) {
                 const eventName = attrName.slice(2).toLowerCase();
-                const eventListener = attrValue;
-                el.addEventListener(eventName, eventListener);
+                if (typeof attrValue === "function") {
+                    const eventListener = attrValue;
+                    el.addEventListener(eventName, eventListener);
+                } else if (Array.isArray(attrValue)) {
+                    const addEventListenerArgs = attrValue;
+                    el.addEventListener(eventName, ...addEventListenerArgs);
+                } else {
+                    throw createError(
+                        `Value of 'on${eventName[0].toUpperCase()}${eventName.slice(1)}' `
+                        + "event listener was not a function nor an array!"
+                    );
+                }
             } else if (isBooleanAttr) {
                 if (attrValue === true) {
                     el.setAttribute(attrName, "");
