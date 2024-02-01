@@ -210,6 +210,10 @@ const strGen = {
         }
     },
 
+    doctype() {
+        this._htmlStrSegments.push("<!DOCTYPE html>");
+    },
+
     /** 
      * Return a string, created by concatenating the HTML string
      * segments that have been created by calling `strGen.tag(...)`, 
@@ -337,6 +341,10 @@ const domGen = {
         }
 
         this._lastNode = node;
+    },
+
+    doctype() {
+        // NOTE: Maybe this should be an error ¯\_(ツ)_/¯
     },
 
     getHtmlStr() {
@@ -559,6 +567,9 @@ const utils = {
         "selected",
     ]),
 
+    ASCII_CODE_UPPER_A: "A".charCodeAt(0),
+    ASCII_CODE_UPPER_Z: "Z".charCodeAt(0),
+
     Error: class GruguiError extends Error {
         constructor(msg) {
             super(msg);
@@ -687,6 +698,43 @@ const utils = {
         }
 
         return typeof value;
+    },
+
+    // We define this array in the object scope to save on heap allocations.
+    _hyphenCaseWords: [],
+    ensureHyphenCase(str) {
+        // Effectively "remove" all elements from the array.
+        this._hyphenCaseWords.length = 0;
+
+        // a) Populate `this._hypenCaseWords` with lowercased words.
+        // b) Return input string if hyphens are found in the string.
+        let wordStart = 0;
+        for (let i = 0; i < str.length - 1; i++) {
+            const isAlreadyHyphenCase = str[i] === "-" || str[i + 1] === "-";
+            if (isAlreadyHyphenCase) {
+                return str;
+            }
+
+            const transitionsToUpper = 
+                !this.charAtIsUpper(str, i) && this.charAtIsUpper(str, i + 1);
+            if (transitionsToUpper) {
+                const wordEnd = i + 1;
+                this._hyphenCaseWords.push(str.slice(wordStart, wordEnd).toLowerCase());
+
+                wordStart = wordEnd;
+            }
+        }
+        this._hyphenCaseWords.push(str.slice(wordStart).toLowerCase());
+
+        return this._hyphenCaseWords.join("-");
+    },
+
+    charAtIsUpper(str, i) {
+        const asciiCode = str.charCodeAt(i);
+        return (
+            this.ASCII_CODE_UPPER_A <= asciiCode
+            && asciiCode <= this.ASCII_CODE_UPPER_Z
+        );
     },
 };
 

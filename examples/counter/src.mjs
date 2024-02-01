@@ -1,16 +1,3 @@
-# Grug-UI
-
-The `grugui.mjs` module provides utilities for procedurally generating HTML/CSS DOM/strings
-and creating interactive page elements.
-
-## Examples
-
-### [Counter](./examples/counter/src.mjs)
-
-The code below illustrates the module's core functionality, including Server-Side Rendering
-and interactivity. (It's very much a toy example to keep it brief.)
-
-```js
 import grugui from "./grugui.mjs";
 
 // Application State
@@ -119,22 +106,4 @@ async function main() {
 }
 
 await main();
-```
-
-You can run the example above by:
-1. Copying the above code to `src.mjs`
-2. Copying `grugui.mjs` to the same directory as `src.mjs`
-3. Running `node src.mjs`
-4. Open `http://localhost:8080` in your browser
-
-### [Tic-Tac-Toe](./examples/tic-tac-toe/index.mjs)
-
-
-## TODOs
-
-- [ ] Add CSS statements as wrapper around the CSSStyleSheet API
-- [ ] Provide API for creation of reactive "components"
-    - More or less just just add something that emulates an event loop
-      by calling an `update` function
-- [ ] Add JSDoc and generate `types.d.ts`
 
