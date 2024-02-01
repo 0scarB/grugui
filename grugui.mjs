@@ -19,15 +19,17 @@ const publicApi = {
         // 'reset', 'tag', 'end', 'trustedText', etc.
         let ctxObj;
         switch (ctx) {
-            case "strGen":
-                ctxObj = strGen;
-                break;
             case "domGen":
                 ctxObj = domGen;
                 break;
+            case "strGen":
+                ctxObj = strGen;
+                break;
             default:
-                // TODO: Add error message
-                throw new Error();
+                throw new utils.Error(
+                    "'grugui.setCtx(<ctx>)' expected <ctx> to be "
+                    + `'strGen' or 'domGen', but got '${ctx}'!`
+                );
         }
 
         // Replace operation placeholders with contextual operations
@@ -57,8 +59,11 @@ const publicApi = {
     getDomParentNode()  {this._throwCtxNotSetError("getDomParentNode"   );},
 
     _throwCtxNotSetError(callerName) {
-        // TODO: Add error message
-        throw new Error();
+        throw new utils.Error(
+            `Operation 'grugui.${callerName}' cannot be executed without `
+            + "a context being set! "
+            + "Set the context with 'grugui.setCtx(\"domGen\"|\"strGen\")'."
+        );
     },
 };
 postDeclarationCallbacks.push(
@@ -67,9 +72,9 @@ postDeclarationCallbacks.push(
     // for all elements defined by the the HTML standard, listed in `utils.EL_NAMES`.
     () => {
         for (const elName of utils.EL_NAMES) {
-            publicApi[elName] = function () {
+            publicApi[elName] = (function () {
                 this._throwCtxNotSetError(elName);
-            };
+            }).bind(publicApi);
         }
     },
 );
@@ -139,8 +144,12 @@ const strGen = {
         const tagName = this._tagNameStack.pop();
 
         if (typeof tagName === "undefined") {
-            // TODO: Add error message
-            throw new Error();
+            throw new utils.Error(
+                "Too many calls to 'grugui.end()' while generating a HTML string! "
+                + "Check that all tags are closed. I.e. 'div(); span();' "
+                + "must be closed with 'end(); end();'. "
+                + "The number of calls to open a tag must match the number of calls to 'end'."
+            );
         }
 
         // Void elements don't need a closing tag
@@ -181,12 +190,24 @@ const strGen = {
     },
 
     untrustedText(str) {
-        throw new Error("Not implemented yet!");
+        throw new utils.Error("Not implemented yet!");
     },
 
     domNode(node) {
-        // TODO: Add error message
-        throw new Error();
+        switch (node.nodeType) {
+            case Node.ELEMENT_NODE:
+                this._htmlStrSegments.push(node.outerHTML);
+                break;
+            case Node.TEXT_NODE:
+                this._htmlStrSegments.push(node.innerHTML);
+                break;
+            default:
+                throw new utils.Error(
+                    "'grugui.domNode(...)' could not handle node type "
+                    + `of DOM node '${node}' while generating a HTML string! `
+                    + "Currently only DOM elements and text nodes are supported."
+                );
+        }
     },
 
     /** 
@@ -217,13 +238,23 @@ const strGen = {
     },
 
     getDomLastNode() {
-        // TODO: Add error message.
-        throw new Error();
+        throw new utils.Error(
+            "Attempted to call 'grugui.getDomLastNode' in the 'strGen' context. "
+            + "This query can only be called in the 'domGen' context! "
+            + "You can use conditional logic to execute code based on the context "
+            + "when necessary. "
+            + "I.e. 'let ctx = \"strGen\"; setCtx(ctx); if (ctx === \"domGen\") {getLastNode();}'. "
+        );
     },
 
     getDomParentNode() {
-        // TODO: Add error message.
-        throw new Error();
+        throw new utils.Error(
+            "Attempted to call 'grugui.getDomParentNode' in the 'strGen' context. "
+            + "This query can only be called in the 'domGen' context! "
+            + "You can use conditional logic to execute code based on the context "
+            + "when necessary. "
+            + "I.e. 'let ctx = \"strGen\"; setCtx(ctx); if (ctx === \"domGen\") {getLastNode();}'. "
+        );
     },
 };
 postDeclarationCallbacks.push(
@@ -277,8 +308,12 @@ const domGen = {
 
     end() {
         if (this._parentNode === null) {
-            // TODO: Add error message
-            throw new Error();
+            throw new utils.Error(
+                "Too many calls to 'grugui.end()' while generating DOM! "
+                + "Check that all tags are closed. I.e. 'div(); span();' "
+                + "must be closed with 'end(); end();'. "
+                + "The number of calls to open a tag must match the number of calls to 'end'."
+            );
         }
 
         const currentNode = this._parentNode;
@@ -305,13 +340,23 @@ const domGen = {
     },
 
     getHtmlStr() {
-        // TODO: Add error message.
-        throw new Error();
+        throw new utils.Error(
+            "Attempted to call 'grugui.getHtmlStr' in the 'domGen' context. "
+            + "This query can only be called in the 'strGen' context! "
+            + "You can use conditional logic to execute code based on the context "
+            + "when necessary. "
+            + "I.e. 'let ctx = \"domGen\"; setCtx(ctx); if (ctx === \"strGen\") {getHtmlStr();}'. "
+        );
     },
 
     getCssStr() {
-        // TODO: Add error message.
-        throw new Error();
+        throw new utils.Error(
+            "Attempted to call 'grugui.getCssStr' in the 'domGen' context. "
+            + "This query can only be called in the 'strGen' context! "
+            + "You can use conditional logic to execute code based on the context "
+            + "when necessary. "
+            + "I.e. 'let ctx = \"domGen\"; setCtx(ctx); if (ctx === \"strGen\") {getCssStr();}'. "
+        );
     },
 
     getDomLastNode() {
@@ -514,6 +559,13 @@ const utils = {
         "selected",
     ]),
 
+    Error: class GruguiError extends Error {
+        constructor(msg) {
+            super(msg);
+            this.name = "GruguiError";
+        }
+    },
+
     /** 
      * Handles 'attr' objects and returns an array containing
      * items: '[<attrName>, {type: valuedHtmlAttr|boolHtmlAttr|eventListener, ...<data>}]'.
@@ -560,14 +612,15 @@ const utils = {
                     continue;
                 }
 
-                throw new Error(
+                throw new this.Error(
                     `Failed to add event listener for key '${attrName}'! `
                     + `Value of type '${typeof attrValue}' was not `
                     + "a) a function representing the listener callback "
                     + "or b) an array of arguments that would be passed "
                     + "to 'addEventListener' -> "
                     + `'addEventListener(${eventName}, ...<argument array>'). `
-                    + `Found invalid value: '${attrValue}'.`
+                    + "Got invalid value "
+                    + `'${this.humanToString(attrValue, {showType: true})}'.`
                 );
             }
 
@@ -582,23 +635,25 @@ const utils = {
                     case null:
                         continue;
                     default:
-                        throw new Error(
-                            `'${attrName}' is a boolean attribute and must have value `
-                            + "which is valueless in native HTML. "
-                            + "In Grug-UI it must have value 'true: boolean' "
-                            + "to signify existence and optionally value 'false: boolean'"
+                        throw new this.Error(
+                            `'${attrName}' is a boolean attribute (represented as `
+                            + "a valueless attribute name in native HTML). "
+                            + "In Grug-UI it must have the value 'true : boolean' "
+                            + "to signify existence and optionally value 'false : boolean' "
                             + "or 'null' to signify omission! "
-                            + `Found invalid value '${attrValue}: ${typeof attrValue}'.`
+                            + "Got invalid value "
+                            + `'${this.humanToString(attrValue, {showType: true})}'.`
                         );
                 }
             }
 
             // Handle valued HTML attributes
             if (typeof attrValue !== "string") {
-                throw new Error(
-                    `Attribute '${attrName}' recieved an value of type '${typeof attrValue}. `
-                    + "Expected a string! "
-                    + `Found invalid value: '${attrValue}'`
+                throw new this.Error(
+                    `Attribute '${attrName}' was set to a value of type `
+                    + `'${typeof attrValue}'. Expected a string! `
+                    + "Got invalid value "
+                    + `'${this.humanToString(attrValue, {showType: true})}'.`
                 );
             }
 
@@ -606,6 +661,32 @@ const utils = {
         }
 
         return result;
+    },
+
+    /** Create a readable string from a value */
+    humanToString(value, opts) {
+        opts = {showType: false, ...opts};
+
+        let result = JSON.stringify(value);
+
+        if (opts.showType) {
+            result = `${result} : ${this.humanTypeof(value)}`;
+        }
+
+        return result;
+    },
+
+    /** More readable version of `typeof`. */
+    humanTypeof(value) {
+        if (Array.isArray(value)) {
+            return "array";
+        }
+
+        if (value === null) {
+            return "null";
+        }
+
+        return typeof value;
     },
 };
 
