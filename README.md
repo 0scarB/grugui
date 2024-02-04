@@ -1,6 +1,6 @@
 # Grug-UI
 
-The `grugui.mjs` module provides utilities for procedurally generating HTML/CSS DOM/strings
+The `grugui.mjs` module provides utilities for generating HTML/CSS DOM/strings
 and creating interactive page elements.
 
 ## Examples
@@ -18,7 +18,7 @@ let count = 0;
 
 /** Procedure that creates a counter component. */
 function counter(update) {
-    const {button, div, end, main, span, trustedText} = grugui;
+    const {button, css, div, end, main, span, trustedText} = grugui;
 
     main({id: "app"});
         div(); 
@@ -35,13 +35,19 @@ function counter(update) {
             ["reset", () => count = 0],
             ["+"    , () => count++  ],
         ]) {
-            button({onClick: () => {
+            button({class: "counter-btn", onClick: () => {
                 operation();
                 update();
             }});
                 trustedText(buttonText);
             end();
         }
+
+        css.rule(".counter-btn", {
+            fontFamily: "monospace",
+            fontSize: css.pt(18),
+            marginTop: css.px(16),
+        });
     end();
 }
 
@@ -50,7 +56,7 @@ function genHtmlPage() {
     grugui.setCtx("strGen");
     grugui.reset();
 
-    const {doctype, html, head, script, body, end} = grugui;
+    const {doctype, html, head, script, body, style, trustedHtmlStr, end, css} = grugui;
 
     doctype();
     html({lang: "en"});
@@ -59,8 +65,24 @@ function genHtmlPage() {
             script({src: "/src.mjs", type: "module", defer: true}); end();
         end();
         body();
+            css.rule("body", {
+                display         : "flex",
+                margin          : 0,
+                padding         : 0,
+                height          : css.vh(100),
+                justifyContent  : "center",
+                alignItems      : "center",
+                fontSize        : css.pt(24),
+                color           : css.rgb(255, 255, 255),
+                backgroundColor : css.hex("#000"),
+            });
             // Statically generate the HTML string for the counter
             counter();
+            style();
+                trustedHtmlStr(
+                    grugui.css.getStr()
+                );
+            end();
         end();
     end();
 
@@ -125,16 +147,7 @@ You can run the example above by:
 1. Copying the above code to `src.mjs`
 2. Copying `grugui.mjs` to the same directory as `src.mjs`
 3. Running `node src.mjs`
-4. Open `http://localhost:8080` in your browser
+4. Opening `http://localhost:8080` in your browser
 
 ### [Tic-Tac-Toe](./examples/tic-tac-toe/index.mjs)
-
-
-## TODOs
-
-- [ ] Add CSS statements as wrapper around the CSSStyleSheet API
-- [ ] Provide API for creation of reactive "components"
-    - More or less just just add something that emulates an event loop
-      by calling an `update` function
-- [ ] Add JSDoc and generate `types.d.ts`
 

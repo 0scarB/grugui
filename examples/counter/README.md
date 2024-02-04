@@ -1,5 +1,7 @@
-# Tic-Tac-Toe Example
+# Counter Example
 
 ## Running
 
-Run `node ./src.mjs`.
+1. Run `node src.mjs` in your terminal
+2. Open `http://localhost:8080` in your browser
+

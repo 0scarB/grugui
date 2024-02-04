@@ -1,4 +1,4 @@
-import {beginExec} from "/grugui.mjs";
+import grugui from "./grugui.mjs";
 
 const state = {
     status: "startScreen",
@@ -11,25 +11,27 @@ const state = {
     ],
 };
 
-function main() {
-    let appEl = document.getElementById("app");
+function ticTacToe(update) {
+    if (state.status === "inPlay" && state.nextPlayer === state.aiPlayer) {
+        makeAiMove();
+    }
 
-    const update = () => {
-        if (state.status === "inPlay" && state.nextPlayer === state.aiPlayer) {
-            makeAiMove();
-        }
+    const {
+        main,
+        fieldset,
+        input,
+        legend,
+        trustedText,
+        label,
+        button,
+        div,
+        code,
+        trustedHtmlStr,
+        end,
+    } = grugui;
 
-        const newAppEl = createAppEl(update);
-        appEl.replaceWith(newAppEl);
-        appEl = newAppEl;
-    };
-
-    update();
-}
-
-function createAppEl(update) {
     const render = () => {
-        html.main(() => {
+        main({id: "app"});
             if (state.status === "startScreen") {
                 renderStartScreen();
             } else {
@@ -39,14 +41,14 @@ function createAppEl(update) {
                     renderNewGameBtn();
                 }
             }
-        });
+        end();
     };
 
     const renderStartScreen = () => {
         // Start Player Selection
-        html.beginFieldset();
-            html.legend(() => html.trustedText("Start Player: "));
-            html.input({
+        fieldset();
+            legend(); trustedText("Start Player: "); end();
+            input({
                 type: "radio", 
                 id: "X", 
                 checked: state.nextPlayer === "X",
@@ -54,9 +56,9 @@ function createAppEl(update) {
                     state.nextPlayer = "X";
                     update();
                 },
-            });
-            html.label({for: "X"}, () => html.trustedText("X"));
-            html.input({
+            }); end();
+            label({for: "X"}); trustedText("X"); end();
+            input({
                 type: "radio", 
                 id: "O", 
                 checked: state.nextPlayer === "O",
@@ -64,14 +66,14 @@ function createAppEl(update) {
                     state.nextPlayer = "O";
                     update();
                 },
-            });
-            html.label({for: "O"}, () => html.trustedText("O"));
+            }); end();
+            label({for: "O"}); trustedText("O"); end();
         end();
 
         // AI Player Selection
-        html.beginFieldset();
-            html.legend(() => html.trustedText("AI Player: "));
-            html.input({
+        fieldset();
+            legend(); trustedText("AI Player: "); end();
+            input({
                 type: "radio", 
                 id: "None", 
                 checked: !state.aiPlayer,
@@ -79,9 +81,9 @@ function createAppEl(update) {
                     state.aiPlayer = "None";
                     update();
                 },
-            });
-            html.label({for: "None"}, () => html.trustedText("None"));
-            html.input({
+            }); end();
+            label({for: "None"}); trustedText("None"); end();
+            input({
                 type: "radio", 
                 id: "X", 
                 checked: state.aiPlayer === "X",
@@ -89,9 +91,9 @@ function createAppEl(update) {
                     state.aiPlayer = "X";
                     update();
                 },
-            });
-            html.label({for: "X"}, () => html.trustedText("X"));
-            html.input({
+            }); end();
+            label({for: "X"}); trustedText("X"); end();
+            input({
                 type: "radio", 
                 id: "O", 
                 checked: state.aiPlayer === "O",
@@ -99,27 +101,27 @@ function createAppEl(update) {
                     state.aiPlayer = "O";
                     update();
                 },
-            });
-            html.label({for: "O"}, () => html.trustedText("O"));
+            }); end();
+            label({for: "O"}); trustedText("O"); end();
         end();
 
         // Start Game Button
-        html.button({
+        button({
             onClick: () => {
                 state.status = "inPlay";
                 update();
             },
-        }, () => html.trustedText("Start Game"));
+        }); trustedText("Start Game"); end();
     };
 
     const renderBoard = () => {
-        html.beginDiv();
+        div();
             for (let rowIdx = 0; rowIdx < 3; rowIdx++) {
                 const row = state.currentBoard[rowIdx];
-                html.beginDiv();
+                div();
                     for (let colIdx = 0; colIdx < 3; colIdx++) {
                         const cell = row[colIdx];
-                        html.beginButton({
+                        button({
                             onClick: () => {
                                 if (state.status !== "inPlay" 
                                     || state.currentBoard[rowIdx][colIdx] !== " ") {
@@ -129,11 +131,11 @@ function createAppEl(update) {
                                 update();
                             },
                         });
-                            html.beginCode();
+                            code();
                                 if (cell === " ") {
-                                    html.unsafeInnerHtml("&nbsp;");
+                                    trustedHtmlStr("&nbsp;");
                                 } else {
-                                    html.trustedText(cell);
+                                    trustedText(cell);
                                 }
                             end();
                         end();
@@ -144,13 +146,13 @@ function createAppEl(update) {
     };
 
     const renderStatus = () => {
-        html.div(() => {
+        div();
             switch (state.status) {
                 case "inPlay":
                     if (state.nextPlayer === state.aiPlayer) {
-                        html.trustedText(`${state.aiPlayer}'s move (super advanced AI!)`);
+                        trustedText(`${state.aiPlayer}'s move (super advanced AI!)`);
                     } else {
-                        html.trustedText(`${state.nextPlayer}'s move`);
+                        trustedText(`${state.nextPlayer}'s move`);
                     }
                     break;
                 case "won":
@@ -161,20 +163,20 @@ function createAppEl(update) {
                         winningPlayer = "X";
                     }
                     if (winningPlayer === state.aiPlayer) {
-                        html.trustedText(`Evil AI (${state.aiPlayer}) wins :(`);
+                        trustedText(`Evil AI (${state.aiPlayer}) wins :(`);
                     } else {
-                        html.trustedText(`${winningPlayer} wins!`);
+                        trustedText(`${winningPlayer} wins!`);
                     }
                     break;
                 case "draw":
-                    html.trustedText("Draw.");
+                    trustedText("Draw.");
                     break;
             }
-        });
+        end();
     };
 
     const renderNewGameBtn = () => {
-        html.button({
+        button({
             onClick: () => {
                 state.status = "startScreen";
                 state.nextPlayer = "X";
@@ -186,14 +188,10 @@ function createAppEl(update) {
                 }
                 update();
             },
-        }, () => html.trustedText("New Game"));
+        }); trustedText("New Game"); end();
     };
 
-    const {html, end} = beginExec("domGen");
-        render();
-    end();
-
-    return html.getDomNode();
+    render();
 }
 
 function makeMove(rowIdx, colIdx) {
@@ -312,5 +310,83 @@ function wasWinningMove(board, rowIdx, colIdx) {
     ));
 }
 
-main();
+// We use `genHtmlPage` for Server-Side Rendering (see bottom of file)
+function genHtmlPage() {
+    grugui.setCtx("strGen");
+    grugui.reset();
+
+    const {doctype, html, head, script, body, style, trustedHtmlStr, end, css} = grugui;
+
+    doctype();
+    html({lang: "en"});
+        head();
+            script({src: "/grugui.mjs", type: "module", defer: true}); end();
+            script({src: "/src.mjs", type: "module", defer: true}); end();
+        end();
+        body();
+            // Statically generate the HTML string for the counter
+            ticTacToe();
+            style();
+                trustedHtmlStr(
+                    grugui.css.getStr()
+                );
+            end();
+        end();
+    end();
+
+    return grugui.getHtmlStr();
+}
+
+/**
+ * Creates a counter DOM element and replaces the element id="app"
+ * with the counter element.
+ */
+function createWebUi() {
+    grugui.setCtx("domGen");
+
+    ticTacToe(createWebUi);
+    document.getElementById("app")
+        .replaceWith(grugui.getDomLastNode());
+
+    grugui.reset();
+}
+
+async function main() {
+    let isNode = typeof process !== "undefined";
+
+    if (isNode) {
+        const fs = await import("node:fs");
+        const http = await import("node:http");
+
+        const server = http.createServer((request, response) => {
+            let responseBody;
+            switch (request.url) {
+                case "/":
+                    console.log("Rendering HTML...");
+                    responseBody = genHtmlPage();
+                    console.log("Rendered HTML.");
+
+                    response.writeHead(200, {"Content-Type": "text/html"});
+                    response.end(responseBody);
+                    console.log("Served HTML.")
+                    break;
+                case "/grugui.mjs":
+                case "/src.mjs":
+                    responseBody = fs.readFileSync(`.${request.url}`, "utf8");
+
+                    response.writeHead(200, {"Content-Type": "text/javascript"});
+                    response.end(responseBody);
+                    console.log(`Served JavaScript file '.${request.url}'.`);
+                    break;
+            }
+        });
+
+        server.listen(8080, "localhost");
+        console.log("Server listening on http://localhost:8080...");
+    } else {
+        createWebUi();
+    }
+}
+
+await main();
 
