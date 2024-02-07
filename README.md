@@ -1,14 +1,88 @@
 # Grug-UI
 
-The `grugui.mjs` module provides utilities for generating HTML/CSS DOM/strings
+The `grugui.mjs` file provides utilities for generating HTML/CSS DOM/strings
 and creating interactive page elements.
+
+
+# Installation
+1. Copy `grugui.mjs` into your project.
+2. (Optional: Scan (speed read)/search the code to verify it's not 
+   doing anything it shouldn't)
+
+
+# Usage
+
+## Client-side
+
+1. Serve a HTML file that loads `grugui.mjs` and your application code,
+   e.g. `src.mjs`:
+   ```html 
+   <!-- index.html -->
+   <!DOCTYPE html>
+   <html ...>
+        <head>
+            ...
+            <script src="./grugui.mjs" type="module" defer></script>
+            <script src="./src.mjs" type="module" defer></script>
+            ...
+        </head>
+        <body>
+            <main id="app"></main>
+        </body>
+   </html>
+   ```
+   (You can use python's `http.server` standard library module to 
+   serve the contents of the project directory if you have it installed: 
+   `python3 -m http.server -d . -b localhost 8080`)
+2. Use the Grug-UI's API to create an integrative Web interface
+   in your application code, e.g.:
+   ```js
+   //-- src.mjs --
+   import grugui from "./grugui.mjs";
+
+   // Application state
+   let count = 0;
+
+   /** (Re)render function. */
+   function render() {
+       grugui.setCtx("domGen");
+
+       const {main, button, trustedText, end} = grugui;
+
+       main({id: "app"});
+           trustedText(`Count: ${count}`);
+           button({onClick: () => {
+               count++;
+               render();
+           }}); 
+               trustedText("Increment");
+           end();
+       end();
+
+       document.getElementById("app").replaceWith(
+           grugui.getDomLastNode()
+       );
+   }
+
+   render();
+   ```
+(see [./examples/counter-min-client-side](./examples/counter-min-client-side))
+
+## Server-side
+
+TODO: Document
+
+See examples below.
+
 
 ## Examples
 
 ### [Counter](./examples/counter/src.mjs)
 
-The code below illustrates the module's core functionality, including Server-Side Rendering
-and interactivity. (It's very much a toy example to keep it brief.)
+![](./README-assets/counter-screenshot.png)
+
+The code below illustrates the module's core functionality, including Server-Side Rendering (see screenshot above)
+and interactivity. (It's very much a toy example in the name of brevity.)
 
 ```js
 import grugui from "./grugui.mjs";
@@ -151,3 +225,48 @@ You can run the example above by:
 
 ### [Tic-Tac-Toe](./examples/tic-tac-toe/index.mjs)
 
+
+## Motivation
+
+The popularity of frontend frameworks like React, Vue, Svelte, Angular, etc.
+over vanilla JavaScript illustrate the fact that Web developers a)
+highly value developer ergonomics and/or b) no longer know how to build
+interactive websites without a framework.
+
+There are a few problems with relying on React, etc.:
+1. These frameworks have massive code bases (relative to the scale of the
+   problem) making them un-forkable/hackable and unauditable for small projects
+2. Almost all projects using these frameworks rely on extra build steps to
+   work (yes, you can technically use React without JSX) which often
+   slows down development due to the setup and maintenance burden of
+   the build systems and/or a slower iteration cycle due to long build times
+3. Users of these frameworks often feel the necessity to perform massive
+   rewrites in the code bases due to a transition to a newer way of doing
+   things or deprecated public APIs. For example, 
+   [React's class components](https://react.dev/reference/react/Component).
+
+These problems are especially relevant for software that seeks to be long
+lived or where the development effort is expected to **reduce** over time.
+
+Here are some proposed solutions to these problems:
+1. Developers should have access to better educational resources on how 
+   to build highly interactive websites without frameworks and on how
+   to build their own tooling for ergonomics
+2. Software that does provide additional ergonomics should be small, 
+   auditable and only mandate extra build steps as an opt-in, not the default
+3. a) Software described in 2. should not touch security relevant APIs, 
+   making updates optional. b) Software should be small enough to be
+   forkable/hackable should the necessity to only modify small parts of it
+   in deviations from the upstream project arise.
+
+In this spirit, the `grugui.mjs` file attempts to provide the necessary
+functionality to create small, interactive websites with ergonomics
+similar to that of React and co., in a small, auditable package.
+
+It's a work-in-progress and there's still a lot that could be improved upon.
+
+Other personal motivations are as follow:
+- to improve my personal knowledge on how to build websites without frontend
+  frameworks
+- have a dependency for quickly building interactive Web-UI that I control
+  and doesn't require tedious setup
